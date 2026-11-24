@@ -1,23 +1,27 @@
 package com.wan.android.ui.home
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.alibaba.android.arouter.launcher.ARouter
-import com.chad.library.adapter.base.listener.OnItemChildClickListener
-import com.chad.library.adapter.base.listener.OnItemClickListener
+import com.chad.library.adapter4.BaseQuickAdapter
+import com.chad.library.adapter4.QuickAdapterHelper
+import com.chad.library.adapter4.loadState.LoadState
+import com.chad.library.adapter4.loadState.trailing.TrailingLoadStateAdapter
 import com.wan.android.R
 import com.wan.android.adapter.ArticleAdapter
 import com.wan.android.adapter.ImageNetAdapter
+import com.wan.android.bean.ArticleEntity
 import com.wan.android.databinding.FragmentHomeBinding
 import com.wan.android.ui.ArticleViewModel
+import com.wan.android.ui.browser.BrowserNormalActivity
 import com.wan.android.ui.collect.CollectViewModel
 import com.wan.baselib.ext.collectOnLifecycle
 import com.wan.baselib.ext.showToast
 import com.wan.baselib.mvvm.BaseVMFragment
-import com.wan.baselib.widget.LoadMoreView
-import com.wan.common.arouter.ArouterPath
+import com.wan.common.base.BaseUiState
+import com.wan.common.base.ListUiState
 import com.wan.common.constant.Const
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -33,6 +37,7 @@ class HomeFragment : BaseVMFragment<ArticleViewModel, FragmentHomeBinding>() {
     private val articleViewModel by viewModels<ArticleViewModel>()
     private val collectViewModel by viewModels<CollectViewModel>()
     private val articleAdapter by lazy { ArticleAdapter() }
+    private lateinit var helper: QuickAdapterHelper
     private var curPosition = 0
 
     override fun attachLayoutRes(): Int = R.layout.fragment_home
@@ -51,34 +56,51 @@ class HomeFragment : BaseVMFragment<ArticleViewModel, FragmentHomeBinding>() {
 
     private fun initRecyclerView() {
         binding.rvHomeList.layoutManager = LinearLayoutManager(context)
-        binding.rvHomeList.adapter = articleAdapter
-        articleAdapter.loadMoreModule.loadMoreView = LoadMoreView()
-        articleAdapter.loadMoreModule.setOnLoadMoreListener { loadMore() }
-        articleAdapter.loadMoreModule.isAutoLoadMore = true
-        articleAdapter.loadMoreModule.isEnableLoadMoreIfNotFullPage = true
+        helper = QuickAdapterHelper.Builder(articleAdapter)
+            .setTrailingLoadStateAdapter(mOnTrailingListener)
+            .setTrailPreloadSize(0) // 预加载（默认值为0）
+            .isTrailAutoLoadMore(true) // 是否自动加载更多（默认为true）
+            .build()
+        binding.rvHomeList.adapter = helper.adapter
         articleAdapter.setOnItemClickListener(mOnItemClickListener)
-        articleAdapter.addChildClickViewIds(R.id.ivCollect)
-        articleAdapter.setOnItemChildClickListener(mOnItemChildClickListener)
+        articleAdapter.addOnItemChildClickListener(R.id.ivCollect, mOnItemChildClickListener)
     }
 
-    private val mOnItemClickListener = OnItemClickListener { _, _, position ->
-        val datasBean = articleAdapter.data[position]
-        ARouter.getInstance().build(ArouterPath.ACTIVITY_BROWSER)
-            .withString(Const.WEB_TITLE, datasBean.title)
-            .withString(Const.WEB_URL, datasBean.link)
-            .navigation()
-    }
+    private val mOnTrailingListener = object : TrailingLoadStateAdapter.OnTrailingListener {
+        override fun onLoad() {
+            loadMore()
+        }
 
-    private val mOnItemChildClickListener = OnItemChildClickListener { _, view, position ->
-        val datasBean = articleAdapter.data[position]
-        curPosition = position
-        when (view.id) {
-            R.id.ivCollect -> {
-                if (datasBean.collect) collectViewModel.unCollect(datasBean.id)
-                else collectViewModel.collect(datasBean.id)
-            }
+        override fun onFailRetry() {
+            loadMore()
+        }
+
+        override fun isAllowLoading(): Boolean {
+            return !binding.swipeRefresh.isRefreshing
         }
     }
+
+    private val mOnItemClickListener =
+        BaseQuickAdapter.OnItemClickListener<ArticleEntity.DatasBean> { adapter, _, position ->
+            val datasBean = adapter.getItem(position)
+            val intent = Intent(requireContext(), BrowserNormalActivity::class.java).apply {
+                putExtra(Const.WEB_TITLE, datasBean.title)
+                putExtra(Const.WEB_URL, datasBean.link)
+            }
+            startActivity(intent)
+        }
+
+    private val mOnItemChildClickListener =
+        BaseQuickAdapter.OnItemChildClickListener<ArticleEntity.DatasBean> { adapter, view, position ->
+            val datasBean = adapter.getItem(position)
+            curPosition = position
+            when (view.id) {
+                R.id.ivCollect -> {
+                    if (datasBean.collect) collectViewModel.unCollect(datasBean.id)
+                    else collectViewModel.collect(datasBean.id)
+                }
+            }
+        }
 
     override fun loadData() {
         homeViewModel.getBanner()
@@ -101,41 +123,54 @@ class HomeFragment : BaseVMFragment<ArticleViewModel, FragmentHomeBinding>() {
     }
 
     override fun subscribeUi() {
-        homeViewModel.bannerUiState.collectOnLifecycle(viewLifecycleOwner) {
-            it.showSuccess?.let { list ->
-                binding.banner.setAdapter(ImageNetAdapter(list))
+        homeViewModel.bannerUiState.collectOnLifecycle(viewLifecycleOwner) { uiState ->
+            when (uiState) {
+                is BaseUiState.Loading -> {}
+                is BaseUiState.Success -> binding.banner.setAdapter(ImageNetAdapter(uiState.data))
+                is BaseUiState.Failure -> uiState.exception.message?.let { showToast(it) }
             }
-            it.showError?.let { errorMsg -> showToast(errorMsg) }
         }
-        homeViewModel.topArticleUiState.collectOnLifecycle(viewLifecycleOwner) {
-            it.showSuccess?.let { list ->
-                articleAdapter.setList(list)
+        homeViewModel.topArticleUiState.collectOnLifecycle(viewLifecycleOwner) { uiState ->
+            when (uiState) {
+                is BaseUiState.Loading -> {}
+                is BaseUiState.Success -> articleAdapter.submitList(uiState.data)
+                is BaseUiState.Failure -> uiState.exception.message?.let { showToast(it) }
             }
-            it.showError?.let { errorMsg -> showToast(errorMsg) }
         }
-        articleViewModel.uiState.collectOnLifecycle(viewLifecycleOwner) {
-            binding.swipeRefresh.isRefreshing = it.showLoading
-            it.showSuccess?.let { articleEntity ->
-                articleEntity.datas?.let { list ->
-                    if (it.isRefresh) articleAdapter.addData(list)
-                    else articleAdapter.addData(list)
+        articleViewModel.uiState.collectOnLifecycle(viewLifecycleOwner) { uiState ->
+            when (uiState) {
+                is ListUiState.Loading -> {
+                    binding.swipeRefresh.isRefreshing = true
+                    // 重置“加载更多”时状态
+                    helper.trailingLoadState = LoadState.None
                 }
-                articleAdapter.loadMoreModule.loadMoreComplete()
+                is ListUiState.Success -> {
+                    binding.swipeRefresh.isRefreshing = false
+                    uiState.data.datas?.let { articleAdapter.addAll(it) }
+                    helper.trailingLoadState = LoadState.NotLoading(!uiState.hasMore)
+                }
+
+                is ListUiState.Failure -> {
+                    binding.swipeRefresh.isRefreshing = false
+                    uiState.exception.message?.let { showToast(it) }
+                    helper.trailingLoadState = LoadState.Error(uiState.exception)
+                }
             }
-            it.showError?.let { errorMsg ->
-                showToast(errorMsg)
-                articleAdapter.loadMoreModule.loadMoreFail()
-            }
-            if (it.showEnd) articleAdapter.loadMoreModule.loadMoreEnd()
-            articleAdapter.loadMoreModule.isEnableLoadMore = it.isEnableLoadMore
         }
-        collectViewModel.uiState.collectOnLifecycle(viewLifecycleOwner) {
-            if (it.showLoading) showProgressDialog() else dismissProgressDialog()
-            it.showSuccess?.let { collect ->
-                articleAdapter.data[curPosition].collect = collect
-                articleAdapter.notifyItemChanged(curPosition)
+        collectViewModel.uiState.collectOnLifecycle(viewLifecycleOwner) { uiState ->
+            when (uiState) {
+                is BaseUiState.Loading -> showProgressDialog()
+                is BaseUiState.Success -> {
+                    dismissProgressDialog()
+                    articleAdapter.items[curPosition].collect = uiState.data
+                    articleAdapter.notifyItemChanged(curPosition)
+                }
+
+                is BaseUiState.Failure -> {
+                    dismissProgressDialog()
+                    uiState.exception.message?.let { showToast(it) }
+                }
             }
-            it.showError?.let { errorMsg -> showToast(errorMsg) }
         }
     }
 }

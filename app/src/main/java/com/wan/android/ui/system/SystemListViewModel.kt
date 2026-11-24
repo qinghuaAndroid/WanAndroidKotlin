@@ -26,17 +26,8 @@ class SystemListViewModel @Inject constructor(private val mRepository: SystemLis
     fun getSystemList() {
         viewModelScope.launch {
             val result = mRepository.getSystemList()
-            if (result is Result.Success) emitSystemListUiState(showSuccess = result.data)
-            else if (result is Result.Error) emitSystemListUiState(showError = result.exception.message)
+            if (result is Result.Success) _uiState.emit(BaseUiState.Success(result.data))
+            else if (result is Result.Error) _uiState.emit(BaseUiState.Failure(result.exception))
         }
-    }
-
-    private suspend fun emitSystemListUiState(
-        showLoading: Boolean = false,
-        showError: String? = null,
-        showSuccess: MutableList<SystemListEntity>? = null
-    ) {
-        val baseUiState = BaseUiState(showLoading, showError, showSuccess)
-        _uiState.emit(baseUiState)
     }
 }

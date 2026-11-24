@@ -2,23 +2,23 @@ package com.wan.android.ui.integral
 
 import android.animation.ValueAnimator
 import android.os.Bundle
-import android.view.View
 import android.view.animation.DecelerateInterpolator
 import androidx.activity.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.alibaba.android.arouter.facade.annotation.Route
-import com.alibaba.android.arouter.launcher.ARouter
+import com.chad.library.adapter4.QuickAdapterHelper
+import com.chad.library.adapter4.loadState.LoadState
+import com.chad.library.adapter4.loadState.trailing.TrailingLoadStateAdapter
 import com.wan.android.R
 import com.wan.android.adapter.IntegralAdapter
+import com.wan.android.adapter.IntegralHeaderAdapter
 import com.wan.android.bean.CoinInfo
 import com.wan.android.databinding.ActivityIntegralBinding
 import com.wan.android.ui.main.MainViewModel
 import com.wan.baselib.ext.collectOnLifecycle
 import com.wan.baselib.ext.showToast
 import com.wan.baselib.mvvm.BaseVMActivity
-import com.wan.baselib.widget.LoadMoreView
-import com.wan.common.arouter.ArouterPath
-import com.wan.common.constant.Const
+import com.wan.common.base.ListUiState
+import com.wan.common.base.onSuccess
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -27,46 +27,54 @@ import dagger.hilt.android.AndroidEntryPoint
  * Create at 2020/4/10.
  */
 @AndroidEntryPoint
-@Route(path = ArouterPath.ACTIVITY_INTEGRAL, extras = Const.NEED_LOGIN)
 class IntegralActivity : BaseVMActivity<IntegralViewModel, ActivityIntegralBinding>() {
 
     private val integralViewModel by viewModels<IntegralViewModel>()
     private val mainViewModel by viewModels<MainViewModel>()
     private val integralAdapter by lazy { IntegralAdapter() }
-    private lateinit var headerView: View
+    private lateinit var helper: QuickAdapterHelper
 
     override fun subscribeUi() {
-        mainViewModel.uiState.collectOnLifecycle(this) {
-            it.showSuccess?.let { userInfoEntity ->
+        mainViewModel.uiState.collectOnLifecycle(this) { uiState ->
+            uiState.onSuccess { userInfoEntity ->
                 userInfoEntity.coinInfo?.let { coinInfo ->
                     startAnim(coinInfo)
                 }
             }
         }
 
-        integralViewModel.uiState.collectOnLifecycle(this) {
-            binding.swipeRefresh.isRefreshing = it.showLoading
-            it.showSuccess?.let { articleEntity ->
-                articleEntity.datas?.let { list ->
-                    if (it.isRefresh) integralAdapter.setList(list)
-                    else integralAdapter.addData(list)
+        integralViewModel.uiState.collectOnLifecycle(this) { uiState ->
+            when (uiState) {
+                is ListUiState.Loading -> {
+                    binding.swipeRefresh.isRefreshing = true
+                    // 重置“加载更多”时状态
+                    helper.trailingLoadState = LoadState.None
                 }
-                integralAdapter.loadMoreModule.loadMoreComplete()
+
+                is ListUiState.Success -> {
+                    binding.swipeRefresh.isRefreshing = false
+                    if (uiState.isRefresh) {
+                        integralAdapter.submitList(uiState.data.datas)
+                    } else {
+                        uiState.data.datas?.let {
+                            integralAdapter.addAll(it)
+                        }
+                    }
+                    helper.trailingLoadState = LoadState.NotLoading(!uiState.hasMore)
+                }
+
+                is ListUiState.Failure -> {
+                    binding.swipeRefresh.isRefreshing = false
+                    uiState.exception.message?.let { showToast(it) }
+                    helper.trailingLoadState = LoadState.Error(uiState.exception)
+                }
             }
-            it.showError?.let { errorMsg ->
-                showToast(errorMsg)
-                integralAdapter.loadMoreModule.loadMoreFail()
-            }
-            if (it.showEnd) integralAdapter.loadMoreModule.loadMoreEnd()
-            integralAdapter.loadMoreModule.isEnableLoadMore = it.isEnableLoadMore
         }
     }
 
     override fun getLayoutId(): Int = R.layout.activity_integral
 
-    override fun initData(savedInstanceState: Bundle?) {
-        ARouter.getInstance().inject(this)
-    }
+    override fun initData(savedInstanceState: Bundle?) {}
 
     override fun initView() {
         title = getString(R.string.my_integral)
@@ -94,17 +102,28 @@ class IntegralActivity : BaseVMActivity<IntegralViewModel, ActivityIntegralBindi
     }
 
     private fun initRecyclerView() {
-        binding.rvIntegralList.run {
-            layoutManager = LinearLayoutManager(this@IntegralActivity)
-            adapter = integralAdapter
-            headerView = layoutInflater.inflate(R.layout.header_integral, this, false)
+        binding.rvIntegralList.layoutManager = LinearLayoutManager(this)
+        helper = QuickAdapterHelper.Builder(integralAdapter)
+            .setTrailingLoadStateAdapter(mOnTrailingListener)
+            .setTrailPreloadSize(0) // 预加载（默认值为0）
+            .isTrailAutoLoadMore(true) // 是否自动加载更多（默认为true）
+            .build()
+        binding.rvIntegralList.adapter = helper.adapter
+        val headerAdapter = IntegralHeaderAdapter()
+        helper.addBeforeAdapter(0, headerAdapter)
+    }
+
+    private val mOnTrailingListener = object : TrailingLoadStateAdapter.OnTrailingListener {
+        override fun onLoad() {
+            loadMore()
         }
-        integralAdapter.run {
-            addHeaderView(headerView)
-            loadMoreModule.loadMoreView = LoadMoreView()
-            loadMoreModule.setOnLoadMoreListener { loadMore() }
-            loadMoreModule.isAutoLoadMore = true
-            loadMoreModule.isEnableLoadMoreIfNotFullPage = false
+
+        override fun onFailRetry() {
+            loadMore()
+        }
+
+        override fun isAllowLoading(): Boolean {
+            return !binding.swipeRefresh.isRefreshing
         }
     }
 

@@ -1,5 +1,6 @@
 package com.wan.android.binding
 
+import android.view.View
 import android.widget.ImageView
 import androidx.databinding.BindingAdapter
 import coil.load
@@ -29,10 +30,10 @@ fun LabelsView.loadSystemLabels(labels: List<SystemListEntity.ChildrenBean>) {
 }
 
 @BindingAdapter(value = ["onSystemLabelClickListener"])
-fun LabelsView.onSystemLabelClickListener(action: (SystemListEntity.ChildrenBean) -> Unit) {
+fun LabelsView.onSystemLabelClickListener(action: (View, SystemListEntity.ChildrenBean) -> Unit) {
     setOnLabelClickListener { label, data, position ->
         val childrenBean = data as SystemListEntity.ChildrenBean
-        action(childrenBean)
+        action(label, childrenBean)
     }
 }
 
@@ -44,10 +45,10 @@ fun LabelsView.loadNavigationLabels(labels: List<ArticleEntity.DatasBean>?) {
 }
 
 @BindingAdapter(value = ["onNavigationLabelClickListener"])
-fun LabelsView.onNavigationLabelClickListener(action: (ArticleEntity.DatasBean) -> Unit) {
+fun LabelsView.onNavigationLabelClickListener(action: (View, ArticleEntity.DatasBean) -> Unit) {
     setOnLabelClickListener { label, data, position ->
         val datasBean = data as ArticleEntity.DatasBean
-        action(datasBean)
+        action(label, datasBean)
     }
 }
 

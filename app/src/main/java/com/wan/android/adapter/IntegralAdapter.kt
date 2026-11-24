@@ -1,8 +1,9 @@
 package com.wan.android.adapter
 
-import com.chad.library.adapter.base.BaseQuickAdapter
-import com.chad.library.adapter.base.module.LoadMoreModule
-import com.chad.library.adapter.base.viewholder.BaseDataBindingHolder
+import android.content.Context
+import android.view.ViewGroup
+import com.chad.library.adapter4.BaseQuickAdapter
+import com.chad.library.adapter4.viewholder.DataBindingHolder
 import com.wan.android.R
 import com.wan.android.bean.IntegralRecordEntity
 import com.wan.android.databinding.ItemIntegralBinding
@@ -12,17 +13,23 @@ import com.wan.android.databinding.ItemIntegralBinding
  * Create at 2020/4/14.
  */
 class IntegralAdapter :
-    BaseQuickAdapter<IntegralRecordEntity.DatasBean, BaseDataBindingHolder<ItemIntegralBinding>>(R.layout.item_integral),
-    LoadMoreModule {
+    BaseQuickAdapter<IntegralRecordEntity.DatasBean, DataBindingHolder<ItemIntegralBinding>>() {
 
-    override fun convert(
-        holder: BaseDataBindingHolder<ItemIntegralBinding>,
-        item: IntegralRecordEntity.DatasBean
+    override fun onCreateViewHolder(
+        context: Context,
+        parent: ViewGroup,
+        viewType: Int
+    ): DataBindingHolder<ItemIntegralBinding> {
+        return DataBindingHolder(R.layout.item_integral, parent)
+    }
+
+    override fun onBindViewHolder(
+        holder: DataBindingHolder<ItemIntegralBinding>,
+        position: Int,
+        item: IntegralRecordEntity.DatasBean?
     ) {
-        holder.dataBinding?.let {
-            it.data = item
-            it.executePendingBindings()
-        }
+        holder.binding.data = item
+        holder.binding.executePendingBindings()
     }
 
 }

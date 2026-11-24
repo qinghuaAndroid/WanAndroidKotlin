@@ -30,34 +30,16 @@ class HomeViewModel @Inject constructor(private val mRepository: HomeRepository)
     fun getTopArticles() {
         viewModelScope.launch {
             val result = mRepository.loadTopArticles()
-            if (result is Result.Success) emitTopArticleUiState(showSuccess = result.data)
-            else if (result is Result.Error) emitTopArticleUiState(showError = result.exception.message)
+            if (result is Result.Success) _topArticleUiState.emit(BaseUiState.Success(result.data))
+            else if (result is Result.Error) _topArticleUiState.emit(BaseUiState.Failure(result.exception))
         }
     }
 
     fun getBanner() {
         viewModelScope.launch {
             val result = mRepository.loadBanner()
-            if (result is Result.Success) emitBannerUiState(showSuccess = result.data)
-            else if (result is Result.Error) emitBannerUiState(showError = result.exception.message)
+            if (result is Result.Success) _bannerUiState.emit(BaseUiState.Success(result.data))
+            else if (result is Result.Error) _bannerUiState.emit(BaseUiState.Failure(result.exception))
         }
-    }
-
-    private suspend fun emitTopArticleUiState(
-        showLoading: Boolean = false,
-        showError: String? = null,
-        showSuccess: MutableList<ArticleEntity.DatasBean>? = null
-    ) {
-        val baseUiState = BaseUiState(showLoading, showError, showSuccess)
-        _topArticleUiState.emit(baseUiState)
-    }
-
-    private suspend fun emitBannerUiState(
-        showLoading: Boolean = false,
-        showError: String? = null,
-        showSuccess: MutableList<BannerEntity>? = null
-    ) {
-        val baseUiState = BaseUiState(showLoading, showError, showSuccess)
-        _bannerUiState.emit(baseUiState)
     }
 }

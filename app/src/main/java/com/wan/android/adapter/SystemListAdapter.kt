@@ -1,8 +1,9 @@
 package com.wan.android.adapter
 
-import com.chad.library.adapter.base.BaseQuickAdapter
-import com.chad.library.adapter.base.module.LoadMoreModule
-import com.chad.library.adapter.base.viewholder.BaseDataBindingHolder
+import android.content.Context
+import android.view.ViewGroup
+import com.chad.library.adapter4.BaseQuickAdapter
+import com.chad.library.adapter4.viewholder.DataBindingHolder
 import com.wan.android.R
 import com.wan.android.bean.SystemListEntity
 import com.wan.android.databinding.ItemSystemBinding
@@ -13,16 +14,25 @@ import com.wan.android.ui.system.SystemListPresenter
  * Create at 2020/4/8.
  */
 class SystemListAdapter :
-    BaseQuickAdapter<SystemListEntity,
-            BaseDataBindingHolder<ItemSystemBinding>>(R.layout.item_system), LoadMoreModule {
+    BaseQuickAdapter<SystemListEntity, DataBindingHolder<ItemSystemBinding>>() {
 
     private val presenter: SystemListPresenter by lazy { SystemListPresenter() }
 
-    override fun convert(holder: BaseDataBindingHolder<ItemSystemBinding>, item: SystemListEntity) {
-        holder.dataBinding?.let {
-            it.systemListEntity = item
-            it.presenter = presenter
-            it.executePendingBindings()
-        }
+    override fun onCreateViewHolder(
+        context: Context,
+        parent: ViewGroup,
+        viewType: Int
+    ): DataBindingHolder<ItemSystemBinding> {
+        return DataBindingHolder(R.layout.item_system, parent)
+    }
+
+    override fun onBindViewHolder(
+        holder: DataBindingHolder<ItemSystemBinding>,
+        position: Int,
+        item: SystemListEntity?
+    ) {
+        holder.binding.systemListEntity = item
+        holder.binding.presenter = presenter
+        holder.binding.executePendingBindings()
     }
 }

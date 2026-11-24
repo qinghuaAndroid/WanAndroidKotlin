@@ -25,33 +25,24 @@ class CollectViewModel @Inject constructor(private val mRepository: CollectRepos
     fun collect(id: Int) {
         viewModelScope.launch {
             val result = mRepository.collect(id)
-            if (result is Result.Success) emitUiState(showSuccess = true)
-            else if (result is Result.Error) emitUiState(showError = result.exception.message)
+            if (result is Result.Success) _uiState.emit(BaseUiState.Success(true))
+            else if (result is Result.Error) _uiState.emit(BaseUiState.Failure(result.exception))
         }
     }
 
     fun unCollect(id: Int) {
         viewModelScope.launch {
             val result = mRepository.unCollect(id)
-            if (result is Result.Success) emitUiState(showSuccess = false)
-            else if (result is Result.Error) emitUiState(showError = result.exception.message)
+            if (result is Result.Success) _uiState.emit(BaseUiState.Success(false))
+            else if (result is Result.Error) _uiState.emit(BaseUiState.Failure(result.exception))
         }
     }
 
     fun unMyCollect(id: Int, originId: Int) {
         viewModelScope.launch {
             val result = mRepository.unMyCollect(id, originId)
-            if (result is Result.Success) emitUiState(showSuccess = false)
-            else if (result is Result.Error) emitUiState(showError = result.exception.message)
+            if (result is Result.Success) _uiState.emit(BaseUiState.Success(false))
+            else if (result is Result.Error) _uiState.emit(BaseUiState.Failure(result.exception))
         }
-    }
-
-    private suspend fun emitUiState(
-        showLoading: Boolean = false,
-        showError: String? = null,
-        showSuccess: Boolean? = null //true表示收藏成功，false表示取消收藏成功
-    ) {
-        val baseUiState = BaseUiState(showLoading, showError, showSuccess)
-        _uiState.emit(baseUiState)
     }
 }

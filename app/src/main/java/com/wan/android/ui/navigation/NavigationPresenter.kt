@@ -1,8 +1,10 @@
 package com.wan.android.ui.navigation
 
-import com.alibaba.android.arouter.launcher.ARouter
-import com.wan.common.arouter.ArouterPath
+import android.content.Intent
+import android.view.View
 import com.wan.android.bean.ArticleEntity
+import com.wan.android.ui.browser.BrowserNormalActivity
+import com.wan.common.constant.Const
 
 /**
  * @author cy
@@ -10,12 +12,16 @@ import com.wan.android.bean.ArticleEntity
  */
 class NavigationPresenter {
 
-    val clickLabel: (ArticleEntity.DatasBean) -> Unit = { clickLabel(it) }
+    val clickLabel: (View, ArticleEntity.DatasBean) -> Unit = { view, datasBean ->
+        clickLabel(view, datasBean)
+    }
 
-    private fun clickLabel(datasBean: ArticleEntity.DatasBean) {
-        ARouter.getInstance().build(ArouterPath.ACTIVITY_BROWSER)
-            .withString(com.wan.common.constant.Const.WEB_TITLE, datasBean.title)
-            .withString(com.wan.common.constant.Const.WEB_URL, datasBean.link)
-            .navigation()
+    private fun clickLabel(view: View, datasBean: ArticleEntity.DatasBean) {
+        val context = view.context ?: return
+        val intent = Intent(context, BrowserNormalActivity::class.java).apply {
+            putExtra(Const.WEB_TITLE, datasBean.title)
+            putExtra(Const.WEB_URL, datasBean.link)
+        }
+        context.startActivity(intent)
     }
 }

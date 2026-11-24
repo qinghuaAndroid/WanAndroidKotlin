@@ -10,12 +10,12 @@ import splitties.resources.color
  * toast
  */
 
-fun showToast(content: String) {
-    ToastUtils.showShortToast(content)
+fun showToast(content: String?) {
+    content?.let { ToastUtils.showShortToast(it) }
 }
 
-fun showLongToast(content: String) {
-    ToastUtils.showLongToast(content)
+fun showLongToast(content: String?) {
+    content?.let { ToastUtils.showLongToast(it) }
 }
 
 fun getThemeColor() = if (SettingUtil.getIsNightMode()) {

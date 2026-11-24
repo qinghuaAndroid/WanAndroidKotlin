@@ -75,8 +75,7 @@ class ArticleViewModel @Inject constructor(
         viewModelScope.launch {
             if (isRefresh) {
                 pageNum = 0
-                emitUiState(showLoading = true)
-                emitUiState(isEnableLoadMore = false)
+                _uiState.emit(ListUiState.Loading)
             }
             val result = when (articleType) {
                 ArticleType.Home -> homeRepository.loadArticles(pageNum)
@@ -90,45 +89,30 @@ class ArticleViewModel @Inject constructor(
             }
             if (result is Result.Success) {
                 val articleEntity = result.data
-                emitUiState(
-                    showLoading = false,
-                    showSuccess = articleEntity,
-                    isRefresh = isRefresh,
-                    isEnableLoadMore = true
-                )
                 articleEntity.run {
                     if (curPage >= pageCount) {
-                        emitUiState(showEnd = true)
+                        _uiState.emit(
+                            ListUiState.Success(
+                                isRefresh,
+                                articleEntity,
+                                false
+                            )
+                        )
                         return@launch
+                    } else {
+                        _uiState.emit(
+                            ListUiState.Success(
+                                isRefresh,
+                                articleEntity,
+                                true
+                            )
+                        )
                     }
                 }
                 pageNum++
             } else if (result is Result.Error) {
-                emitUiState(
-                    showLoading = false,
-                    showError = result.exception.message,
-                    isEnableLoadMore = true
-                )
+                _uiState.emit(ListUiState.Failure(result.exception))
             }
         }
-    }
-
-    private suspend fun emitUiState(
-        showLoading: Boolean = false,
-        showError: String? = null,
-        showSuccess: ArticleEntity? = null,
-        showEnd: Boolean = false, // 加载更多
-        isRefresh: Boolean = false, // 刷新
-        isEnableLoadMore: Boolean = false
-    ) {
-        val listUiState = ListUiState(
-            showLoading,
-            showError,
-            showSuccess,
-            showEnd,
-            isRefresh,
-            isEnableLoadMore
-        )
-        _uiState.emit(listUiState)
     }
 }

@@ -20,6 +20,6 @@ class ThemeInitializer : Initializer<Unit> {
     }
 
     override fun dependencies(): List<Class<out Initializer<*>>> {
-        return listOf(ARouterInitializer::class.java)
+        return listOf(MMKVInitializer::class.java)
     }
 }

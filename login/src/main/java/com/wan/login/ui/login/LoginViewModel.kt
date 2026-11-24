@@ -67,10 +67,9 @@ class LoginViewModel @Inject constructor(private val mRepository: LoginRepositor
         showError: String? = null,
         showSuccess: User? = null,
         enableLoginButton: Boolean = false,
-        needLogin: Boolean = false
     ) {
         val loginUiState =
-            LoginUiState(showProgress, showError, showSuccess, enableLoginButton, needLogin)
+            LoginUiState(showProgress, showError, showSuccess, enableLoginButton)
         _uiState.value = loginUiState
     }
 }
@@ -80,5 +79,4 @@ data class LoginUiState(
     val showError: String?,
     val showSuccess: User?,
     val enableLoginButton: Boolean,
-    val needLogin: Boolean
 )

@@ -14,6 +14,9 @@ import com.wan.baselib.ext.getThemeColor
 import com.wan.baselib.ext.showToast
 import com.wan.baselib.flowbus.SharedFlowBus
 import com.wan.baselib.mvvm.BaseVMFragment
+import com.wan.common.base.onFailure
+import com.wan.common.base.onLoading
+import com.wan.common.base.onSuccess
 import dagger.hilt.android.AndroidEntryPoint
 import splitties.views.backgroundColor
 
@@ -52,10 +55,15 @@ class TabFragment : BaseVMFragment<TabViewModel, FragmentTabBinding>() {
     }
 
     override fun subscribeUi() {
-        tabViewModel.uiState.collectOnLifecycle(viewLifecycleOwner) {
-            if (it.showLoading) showProgressDialog() else dismissProgressDialog()
-            it.showSuccess?.let { tabList -> showList(tabList) }
-            it.showError?.let { errorMsg -> showToast(errorMsg) }
+        tabViewModel.uiState.collectOnLifecycle(viewLifecycleOwner) { uiState ->
+            uiState.onLoading {
+                showProgressDialog()
+            }.onSuccess {
+                dismissProgressDialog()
+                showList(it)
+            }.onFailure {
+                showToast(it.message)
+            }
         }
     }
 

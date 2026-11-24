@@ -1,8 +1,9 @@
 package com.wan.android.adapter
 
-import com.chad.library.adapter.base.BaseQuickAdapter
-import com.chad.library.adapter.base.module.LoadMoreModule
-import com.chad.library.adapter.base.viewholder.BaseDataBindingHolder
+import android.content.Context
+import android.view.ViewGroup
+import com.chad.library.adapter4.BaseQuickAdapter
+import com.chad.library.adapter4.viewholder.DataBindingHolder
 import com.wan.android.R
 import com.wan.android.bean.NavigationEntity
 import com.wan.android.databinding.ItemNavigationBinding
@@ -13,16 +14,25 @@ import com.wan.android.ui.navigation.NavigationPresenter
  * Create at 2020/4/8.
  */
 class NavigationAdapter :
-    BaseQuickAdapter<NavigationEntity,
-            BaseDataBindingHolder<ItemNavigationBinding>>(R.layout.item_navigation), LoadMoreModule {
+    BaseQuickAdapter<NavigationEntity, DataBindingHolder<ItemNavigationBinding>>() {
 
     private val presenter: NavigationPresenter by lazy { NavigationPresenter() }
 
-    override fun convert(holder: BaseDataBindingHolder<ItemNavigationBinding>, item: NavigationEntity) {
-        holder.dataBinding?.let {
-            it.navigationEntity = item
-            it.presenter = presenter
-            it.executePendingBindings()
-        }
+    override fun onCreateViewHolder(
+        context: Context,
+        parent: ViewGroup,
+        viewType: Int
+    ): DataBindingHolder<ItemNavigationBinding> {
+        return DataBindingHolder(R.layout.item_navigation, parent)
+    }
+
+    override fun onBindViewHolder(
+        holder: DataBindingHolder<ItemNavigationBinding>,
+        position: Int,
+        item: NavigationEntity?
+    ) {
+        holder.binding.navigationEntity = item
+        holder.binding.presenter = presenter
+        holder.binding.executePendingBindings()
     }
 }

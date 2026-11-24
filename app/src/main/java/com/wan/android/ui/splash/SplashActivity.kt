@@ -2,18 +2,19 @@ package com.wan.android.ui.splash
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
-import com.alibaba.android.arouter.launcher.ARouter
 import com.wan.android.R
 import com.wan.android.databinding.ActivitySplashBinding
+import com.wan.android.ui.main.MainActivity
 import com.wan.baselib.base.BaseActivity
 import com.wan.baselib.ext.showLongToast
-import com.wan.common.arouter.ArouterPath
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * @author cy
@@ -60,8 +61,8 @@ class SplashActivity : BaseActivity<ActivitySplashBinding>() {
 
     private fun enterMain() {
         lifecycleScope.launch {
-            delay(2000)//delay函数是挂起，非阻塞的
-            ARouter.getInstance().build(ArouterPath.ACTIVITY_MAIN).navigation()
+            delay(2000.milliseconds)//delay函数是挂起，非阻塞的
+            startActivity(Intent(this@SplashActivity, MainActivity::class.java))
             finish()
         }
     }

@@ -27,55 +27,27 @@ class MyArticleViewModel @Inject constructor(private val mRepository: MyArticleR
 
     fun getMyArticle(isRefresh: Boolean) {
         viewModelScope.launch {
-            emitUiState(showLoading = true)
             if (isRefresh) {
                 pageNum = 0
-                emitUiState(isEnableLoadMore = false)
+                _uiState.emit(ListUiState.Loading)
             }
             val result = mRepository.getMyArticle(pageNum)
             if (result is Result.Success) {
                 val myArticleEntity = result.data
-                emitUiState(
-                    showLoading = false,
-                    showSuccess = myArticleEntity,
-                    isRefresh = isRefresh,
-                    isEnableLoadMore = true
-                )
                 val shareArticles = myArticleEntity.shareArticles
                 shareArticles?.let {
                     if (it.curPage >= it.pageCount) {
-                        emitUiState(showEnd = true)
+                        _uiState.emit(ListUiState.Success(isRefresh, myArticleEntity, false))
                         return@launch
+                    } else {
+                        _uiState.emit(ListUiState.Success(isRefresh, myArticleEntity, true))
                     }
                 }
                 pageNum++
             } else if (result is Result.Error) {
-                emitUiState(
-                    showLoading = false,
-                    showError = result.exception.message,
-                    isEnableLoadMore = true
-                )
+                _uiState.emit(ListUiState.Failure(result.exception))
             }
-
         }
-    }
 
-    private suspend fun emitUiState(
-        showLoading: Boolean = false,
-        showError: String? = null,
-        showSuccess: MyArticleEntity? = null,
-        showEnd: Boolean = false, // 加载更多
-        isRefresh: Boolean = false, // 刷新
-        isEnableLoadMore: Boolean = false
-    ) {
-        val listUiState = ListUiState(
-            showLoading,
-            showError,
-            showSuccess,
-            showEnd,
-            isRefresh,
-            isEnableLoadMore
-        )
-        _uiState.emit(listUiState)
     }
 }

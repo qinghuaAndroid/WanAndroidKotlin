@@ -6,9 +6,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
-import com.alibaba.android.arouter.facade.annotation.Route
 import com.wan.baselib.base.BaseActivity
-import com.wan.common.arouter.ArouterPath
 import com.wan.login.R
 import com.wan.login.databinding.ActivityLoginBinding
 import dagger.hilt.android.AndroidEntryPoint
@@ -19,7 +17,6 @@ import dagger.hilt.android.AndroidEntryPoint
  * @see <a href="https://mp.weixin.qq.com/s/kqjYN4LqzONkDAHI3rLRTQ">navigation</a>
  */
 @AndroidEntryPoint
-@Route(path = ArouterPath.ACTIVITY_LOGIN)
 class LoginActivity : BaseActivity<ActivityLoginBinding>() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration

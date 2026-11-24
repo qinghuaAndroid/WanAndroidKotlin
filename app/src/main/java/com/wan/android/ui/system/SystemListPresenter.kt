@@ -1,9 +1,10 @@
 package com.wan.android.ui.system
 
-import com.alibaba.android.arouter.launcher.ARouter
-import com.wan.common.arouter.ArouterPath
+import android.content.Intent
+import android.view.View
 import com.wan.android.bean.SystemListEntity
 import com.wan.android.constant.Const
+import com.wan.android.ui.system.act.SystemActivity
 
 /**
  * @author cy
@@ -11,14 +12,14 @@ import com.wan.android.constant.Const
  */
 class SystemListPresenter {
 
-    val clickLabel: (SystemListEntity.ChildrenBean) -> Unit = { clickLabel(it) }
+    val clickLabel: (View, SystemListEntity.ChildrenBean) -> Unit =
+        { view, childrenBean -> clickLabel(view, childrenBean) }
 
-    private fun clickLabel(childrenBean: SystemListEntity.ChildrenBean) {
-        val id = childrenBean.id
-        val title = childrenBean.name
-        ARouter.getInstance().build(ArouterPath.ACTIVITY_SYSTEM)
-            .withInt(Const.SYSTEM_ID, id)
-            .withString(Const.SYSTEM_TITLE, title)
-            .navigation()
+    private fun clickLabel(view: View, childrenBean: SystemListEntity.ChildrenBean) {
+        val context = view.context ?: return
+        val intent = Intent(context, SystemActivity::class.java)
+        intent.putExtra(Const.SYSTEM_ID, childrenBean.id)
+        intent.putExtra(Const.SYSTEM_TITLE, childrenBean.name)
+        context.startActivity(intent)
     }
 }

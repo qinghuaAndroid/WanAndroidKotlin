@@ -7,7 +7,6 @@ import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.color.ColorPalette
 import com.afollestad.materialdialogs.color.colorChooser
 import com.afollestad.materialdialogs.lifecycle.lifecycleOwner
-import com.alibaba.android.arouter.facade.annotation.Route
 import com.wan.android.R
 import com.wan.android.databinding.ActivitySettingBinding
 import com.wan.baselib.ext.collectOnLifecycle
@@ -16,7 +15,6 @@ import com.wan.baselib.mvvm.BaseVMActivity
 import com.wan.baselib.utils.SettingUtil
 import com.wan.baselib.utils.StringUtils
 import com.wan.baselib.utils.versionName
-import com.wan.common.arouter.ArouterPath
 import com.wan.common.constant.Const
 import dagger.hilt.android.AndroidEntryPoint
 import splitties.views.onClick
@@ -27,7 +25,6 @@ import splitties.views.onClick
  * Create at 2020/4/10.
  */
 @AndroidEntryPoint
-@Route(path = ArouterPath.ACTIVITY_SETTING)
 class SettingActivity : BaseVMActivity<SettingViewModel, ActivitySettingBinding>() {
 
     private val settingViewModel by viewModels<SettingViewModel>()

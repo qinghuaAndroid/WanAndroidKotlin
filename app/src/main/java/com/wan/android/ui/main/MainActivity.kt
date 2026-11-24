@@ -1,5 +1,6 @@
 package com.wan.android.ui.main
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -16,8 +17,6 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
-import com.alibaba.android.arouter.facade.annotation.Route
-import com.alibaba.android.arouter.launcher.ARouter
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.navigation.NavigationView
@@ -28,6 +27,12 @@ import com.wan.android.bean.CoinInfo
 import com.wan.android.databinding.ActivityMainBinding
 import com.wan.android.databinding.NavHeaderMainBinding
 import com.wan.android.ui.account.AccountViewModel
+import com.wan.android.ui.collect.CollectActivity
+import com.wan.android.ui.integral.IntegralActivity
+import com.wan.android.ui.question.QuestionActivity
+import com.wan.android.ui.search.SearchActivity
+import com.wan.android.ui.setting.SettingActivity
+import com.wan.android.ui.share.ShareListActivity
 import com.wan.baselib.ext.collectOnLifecycle
 import com.wan.baselib.ext.dp
 import com.wan.baselib.ext.getThemeColor
@@ -35,15 +40,16 @@ import com.wan.baselib.ext.showToast
 import com.wan.baselib.flowbus.SharedFlowBus
 import com.wan.baselib.mvvm.BaseVMActivity
 import com.wan.baselib.utils.SettingUtil
-import com.wan.common.arouter.ArouterPath
-import com.wan.common.ext.navigation
+import com.wan.common.base.onFailure
+import com.wan.common.base.onLoading
+import com.wan.common.base.onSuccess
+import com.wan.login.ui.LoginActivity
 import dagger.hilt.android.AndroidEntryPoint
 import splitties.views.backgroundColor
 import splitties.views.onClick
 
 
 @AndroidEntryPoint
-@Route(path = ArouterPath.ACTIVITY_MAIN)
 class MainActivity : BaseVMActivity<MainViewModel, ActivityMainBinding>() {
 
     private val globalViewModel by lazy {
@@ -125,7 +131,7 @@ class MainActivity : BaseVMActivity<MainViewModel, ActivityMainBinding>() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.action_search -> {
-                ARouter.getInstance().build(ArouterPath.ACTIVITY_SEARCH).navigation()
+                startActivity(Intent(this, SearchActivity::class.java))
                 return true
             }
         }
@@ -140,7 +146,7 @@ class MainActivity : BaseVMActivity<MainViewModel, ActivityMainBinding>() {
         binding.navView.setNavigationItemSelectedListener(onDrawerNavigationItemSelectedListener)
         navHeaderMainBinding.tvUsername.onClick {
             if (accountViewModel.isLogin.not()) {
-                ARouter.getInstance().build(ArouterPath.ACTIVITY_LOGIN).navigation()
+                startActivity(Intent(this, LoginActivity::class.java))
             }
         }
     }
@@ -152,29 +158,29 @@ class MainActivity : BaseVMActivity<MainViewModel, ActivityMainBinding>() {
         NavigationView.OnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_score -> {
-                    ARouter.getInstance().build(ArouterPath.ACTIVITY_INTEGRAL).navigation(this) {
-                        onInterrupt {
-                            ARouter.getInstance().build(ArouterPath.ACTIVITY_LOGIN).with(it?.extras)
-                                .navigation()
-                        }
-                    }
+                    startActivity(
+                        Intent(
+                            this,
+                            if (accountViewModel.isLogin) IntegralActivity::class.java else LoginActivity::class.java
+                        )
+                    )
                 }
 
                 R.id.nav_collect -> {
-                    ARouter.getInstance().build(ArouterPath.ACTIVITY_COLLECT).navigation(this) {
-                        onInterrupt {
-                            ARouter.getInstance().build(ArouterPath.ACTIVITY_LOGIN).with(it?.extras)
-                                .navigation()
-                        }
-                    }
+                    startActivity(
+                        Intent(
+                            this,
+                            if (accountViewModel.isLogin) CollectActivity::class.java else LoginActivity::class.java
+                        )
+                    )
                 }
 
                 R.id.nav_question -> {
-                    ARouter.getInstance().build(ArouterPath.ACTIVITY_QUESTION).navigation()
+                    startActivity(Intent(this, QuestionActivity::class.java))
                 }
 
                 R.id.nav_setting -> {
-                    ARouter.getInstance().build(ArouterPath.ACTIVITY_SETTING).navigation()
+                    startActivity(Intent(this, SettingActivity::class.java))
                 }
 
                 R.id.nav_about_us -> {
@@ -194,7 +200,7 @@ class MainActivity : BaseVMActivity<MainViewModel, ActivityMainBinding>() {
                 }
 
                 R.id.nav_square -> {
-                    ARouter.getInstance().build(ArouterPath.ACTIVITY_SHARE_LIST).navigation()
+                    startActivity(Intent(this, ShareListActivity::class.java))
                 }
             }
             // drawer_layout.closeDrawer(GravityCompat.START)
@@ -260,18 +266,26 @@ class MainActivity : BaseVMActivity<MainViewModel, ActivityMainBinding>() {
     }
 
     override fun subscribeUi() {
-        mainViewModel.uiState.collectOnLifecycle(this) {
-            if (it.showLoading) showProgressDialog() else dismissProgressDialog()
-            it.showSuccess?.let { userInfoEntity ->
-                showUserInfo(userInfoEntity.coinInfo)
+        mainViewModel.uiState.collectOnLifecycle(this) { uiState ->
+            uiState.onLoading {
+                showProgressDialog()
+            }.onSuccess {
+                dismissProgressDialog()
+                showUserInfo(it.coinInfo)
+            }.onFailure {
+                showToast(it.message)
             }
-            it.showError?.let { errorMsg -> showToast(errorMsg) }
         }
 
-        accountViewModel.uiState.observe(this) {
-            if (it.showLoading) showProgressDialog() else dismissProgressDialog()
-            it.showSuccess?.let { showUserInfo(null) }
-            it.showError?.let { errorMsg -> showToast(errorMsg) }
+        accountViewModel.uiState.observe(this) { uiState ->
+            uiState.onLoading {
+                showProgressDialog()
+            }.onSuccess {
+                dismissProgressDialog()
+                showUserInfo(null)
+            }.onFailure {
+                showToast(it.message)
+            }
         }
 
         accountViewModel.isLogged.observe(this) {

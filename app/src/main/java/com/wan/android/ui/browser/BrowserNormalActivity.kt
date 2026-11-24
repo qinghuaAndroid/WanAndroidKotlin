@@ -7,30 +7,23 @@ import android.view.KeyEvent
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.widget.LinearLayout
-import com.alibaba.android.arouter.facade.annotation.Autowired
-import com.alibaba.android.arouter.facade.annotation.Route
-import com.alibaba.android.arouter.launcher.ARouter
-import com.just.agentweb.*
+import com.just.agentweb.AgentWeb
+import com.just.agentweb.DefaultWebClient
+import com.just.agentweb.NestedScrollAgentWebView
+import com.just.agentweb.WebChromeClient
+import com.just.agentweb.WebViewClient
 import com.wan.android.R
 import com.wan.android.databinding.ActivityBrowserNormalBinding
 import com.wan.baselib.base.BaseActivity
-import com.wan.common.arouter.ArouterPath
 import com.wan.common.constant.Const
 
 /**
  * @author cy
  * Create at 2020/4/8.
  */
-@Route(path = ArouterPath.ACTIVITY_BROWSER)
 class BrowserNormalActivity : BaseActivity<ActivityBrowserNormalBinding>() {
-
-    @Autowired(name = Const.WEB_TITLE)
-    @JvmField
-    var title: String? = null
-
-    @Autowired(name = Const.WEB_URL)
-    @JvmField
-    var url: String? = null
+    private var title: String? = null
+    private var url: String? = null
     private lateinit var mAgentWeb: AgentWeb
     private val mWebView: NestedScrollAgentWebView by lazy {
         NestedScrollAgentWebView(this)
@@ -39,7 +32,8 @@ class BrowserNormalActivity : BaseActivity<ActivityBrowserNormalBinding>() {
     override fun getLayoutId(): Int = R.layout.activity_browser_normal
 
     override fun initData(savedInstanceState: Bundle?) {
-        ARouter.getInstance().inject(this)
+        title = intent.getStringExtra(Const.WEB_TITLE)
+        url = intent.getStringExtra(Const.WEB_URL)
     }
 
     override fun initView() {

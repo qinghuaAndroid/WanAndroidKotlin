@@ -1,6 +1,10 @@
 package com.wan.android.ui.account
 
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.viewModelScope
 import com.tencent.mmkv.MMKV
 import com.wan.baselib.mvvm.BaseViewModel
 import com.wan.baselib.mvvm.Result
@@ -9,7 +13,6 @@ import com.wan.common.constant.Const
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -39,17 +42,10 @@ class AccountViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.Main) {
             val result = mRepository.logout()
             if (result is Result.Success) {
-                emitUiState(showSuccess = true)
-            } else if (result is Result.Error) emitUiState(showError = result.exception.message)
+                _uiState.value = BaseUiState.Success(data = true)
+            } else if (result is Result.Error) {
+                _uiState.value = BaseUiState.Failure(exception = result.exception)
+            }
         }
-    }
-
-    private fun emitUiState(
-        showLoading: Boolean = false,
-        showError: String? = null,
-        showSuccess: Boolean? = null
-    ) {
-        val baseUiState = BaseUiState(showLoading, showError, showSuccess)
-        _uiState.value = baseUiState
     }
 }

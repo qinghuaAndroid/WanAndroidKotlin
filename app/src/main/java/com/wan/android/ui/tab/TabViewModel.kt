@@ -27,17 +27,8 @@ class TabViewModel @Inject constructor(private val mRepository: TabRepository) :
     fun getTabList(type: Int) {
         viewModelScope.launch(Dispatchers.Main) {
             val result = withContext(Dispatchers.IO) { mRepository.getTabList(type) }
-            if (result is Result.Success) emitUiState(showSuccess = result.data)
-            else if (result is Result.Error) emitUiState(showError = result.exception.message)
+            if (result is Result.Success) _uiState.emit(BaseUiState.Success(result.data))
+            else if (result is Result.Error) _uiState.emit(BaseUiState.Failure(result.exception))
         }
-    }
-
-    private suspend fun emitUiState(
-        showLoading: Boolean = false,
-        showError: String? = null,
-        showSuccess: MutableList<TabEntity>? = null
-    ) {
-        val baseUiState = BaseUiState(showLoading, showError, showSuccess)
-        _uiState.emit(baseUiState)
     }
 }

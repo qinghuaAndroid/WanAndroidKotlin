@@ -1,22 +1,22 @@
 package com.wan.android.ui.search
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.widget.ImageView
 import androidx.activity.viewModels
 import androidx.appcompat.widget.SearchView
-import com.alibaba.android.arouter.facade.annotation.Route
-import com.alibaba.android.arouter.launcher.ARouter
 import com.wan.android.R
 import com.wan.android.bean.HotSearchEntity
-import com.wan.android.bean.SearchHistoryBean
 import com.wan.android.constant.Const
 import com.wan.android.databinding.ActivitySearchBinding
+import com.wan.android.ui.search.list.SearchListActivity
 import com.wan.baselib.ext.collectOnLifecycle
 import com.wan.baselib.ext.listener.queryTextListener
 import com.wan.baselib.ext.showToast
 import com.wan.baselib.mvvm.BaseVMActivity
-import com.wan.common.arouter.ArouterPath
+import com.wan.common.base.onFailure
+import com.wan.common.base.onSuccess
 import dagger.hilt.android.AndroidEntryPoint
 import splitties.views.onClick
 
@@ -25,7 +25,6 @@ import splitties.views.onClick
  * Create at 2020/4/14.
  */
 @AndroidEntryPoint
-@Route(path = ArouterPath.ACTIVITY_SEARCH)
 class SearchActivity : BaseVMActivity<SearchViewModel, ActivitySearchBinding>() {
 
     private val searchViewModel by viewModels<SearchViewModel>()
@@ -47,8 +46,9 @@ class SearchActivity : BaseVMActivity<SearchViewModel, ActivitySearchBinding>() 
 
     private fun goToSearchList(key: String) {
         searchViewModel.saveSearchKey(key)
-        ARouter.getInstance().build(ArouterPath.ACTIVITY_SEARCH_LIST)
-            .withString(Const.SEARCH_KEY, key).navigation()
+        val intent = Intent(this, SearchListActivity::class.java)
+        intent.putExtra(Const.SEARCH_KEY, key)
+        startActivity(intent)
     }
 
     override fun loadData() {
@@ -57,10 +57,9 @@ class SearchActivity : BaseVMActivity<SearchViewModel, ActivitySearchBinding>() 
     }
 
     override fun subscribeUi() {
-        searchViewModel.uiState.collectOnLifecycle(this) {
-            if (it.showLoading) showProgressDialog() else dismissProgressDialog()
-            it.showSuccess?.let { historyBeans -> showHotSearchData(historyBeans) }
-            it.showError?.let { errorMsg -> showToast(errorMsg) }
+        searchViewModel.uiState.collectOnLifecycle(this) { uiState ->
+            uiState.onSuccess { showHotSearchData(it) }
+                .onFailure { showToast(it.message) }
         }
         searchViewModel.historyList.collectOnLifecycle(this) { list ->
             showHistoryData(list)
@@ -78,16 +77,16 @@ class SearchActivity : BaseVMActivity<SearchViewModel, ActivitySearchBinding>() 
         }
     }
 
-    private fun showHistoryData(historyBeans: List<SearchHistoryBean>) {
+    private fun showHistoryData(historyBeans: List<String>) {
         binding.historyLabelsView.run {
             setLabels(historyBeans) { _, _, data ->
-                data.key
+                data
             }
             setOnLabelClickListener { _, _, position ->
-                onLabelClick(historyBeans[position].key)
+                onLabelClick(historyBeans[position])
             }
             setOnLabelLongClickListener { _, _, position ->
-                onLabelLongClick(historyBeans[position].key)
+                onLabelLongClick(historyBeans[position])
                 true
             }
         }
@@ -124,6 +123,5 @@ class SearchActivity : BaseVMActivity<SearchViewModel, ActivitySearchBinding>() 
 
     override fun onDestroy() {
         super.onDestroy()
-        searchViewModel.closeRealm()
     }
 }

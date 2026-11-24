@@ -12,6 +12,8 @@ import com.wan.android.databinding.FragmentSystemListBinding
 import com.wan.baselib.ext.collectOnLifecycle
 import com.wan.baselib.ext.showToast
 import com.wan.baselib.mvvm.BaseVMFragment
+import com.wan.common.base.onFailure
+import com.wan.common.base.onSuccess
 import com.wan.common.callback.EmptyCallback
 import com.wan.common.callback.ErrorCallback
 import com.wan.common.callback.LoadingCallback
@@ -50,18 +52,17 @@ class SystemListFragment : BaseVMFragment<SystemListViewModel, FragmentSystemLis
 
     override fun subscribeUi() {
         loadService.showCallback(LoadingCallback::class.java)
-        mViewModel.uiState.collectOnLifecycle(viewLifecycleOwner) { baseUiState ->
-            baseUiState.showSuccess?.let {
+        mViewModel.uiState.collectOnLifecycle(viewLifecycleOwner) { uiState ->
+            uiState.onSuccess {
                 if (it.isEmpty()) {
                     loadService.showCallback(EmptyCallback::class.java)
                 } else {
                     loadService.showSuccess()
-                    systemListAdapter.setList(it)
+                    systemListAdapter.submitList(it)
                 }
-            }
-            baseUiState.showError?.let {
+            }.onFailure {
                 loadService.showCallback(ErrorCallback::class.java)
-                showToast(it)
+                showToast(it.message)
             }
         }
     }

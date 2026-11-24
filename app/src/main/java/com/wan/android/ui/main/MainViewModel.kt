@@ -23,19 +23,10 @@ class MainViewModel @Inject constructor(private val mRepository: MainRepository)
         viewModelScope.launch {
             val result = mRepository.getUserInfo()
             if (result is Result.Success) {
-                emitUiState(showSuccess = result.data)
+                _uiState.emit(BaseUiState.Success(result.data))
             } else if (result is Result.Error) {
-                emitUiState(showError = result.exception.message)
+                _uiState.emit(BaseUiState.Failure(result.exception))
             }
         }
-    }
-
-    private suspend fun emitUiState(
-        showLoading: Boolean = false,
-        showError: String? = null,
-        showSuccess: UserInfoEntity? = null
-    ) {
-        val baseUiState = BaseUiState(showLoading, showError, showSuccess)
-        _uiState.emit(baseUiState)
     }
 }
