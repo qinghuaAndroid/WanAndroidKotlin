@@ -1,6 +1,5 @@
 package com.wan.android.ui.myarticle
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -12,11 +11,12 @@ import com.wan.android.R
 import com.wan.android.adapter.ArticleAdapter
 import com.wan.android.bean.ArticleEntity
 import com.wan.android.databinding.ActivityMyArticleBinding
-import com.wan.android.ui.browser.BrowserNormalActivity
 import com.wan.android.ui.collect.CollectViewModel
 import com.wan.baselib.ext.collectOnLifecycle
 import com.wan.baselib.ext.showToast
 import com.wan.baselib.mvvm.BaseVMActivity
+import com.wan.baselib.router.Router
+import com.wan.baselib.router.RouterPath
 import com.wan.common.base.BaseUiState
 import com.wan.common.base.ListUiState
 import com.wan.common.constant.Const
@@ -119,11 +119,10 @@ class MyArticleActivity : BaseVMActivity<MyArticleViewModel, ActivityMyArticleBi
     private val mOnItemClickListener =
         BaseQuickAdapter.OnItemClickListener<ArticleEntity.DatasBean> { adapter, _, position ->
             val datasBean = adapter.getItem(position)
-            val intent = Intent(this, BrowserNormalActivity::class.java).apply {
-                putExtra(Const.WEB_TITLE, datasBean.title)
-                putExtra(Const.WEB_URL, datasBean.link)
-            }
-            startActivity(intent)
+            val routerRequest = Router.build(RouterPath.PATH_BROWSER)
+                .withString(Const.WEB_TITLE, datasBean.title)
+                .withString(Const.WEB_URL, datasBean.link)
+            Router.navigation(this, routerRequest)
         }
 
     private val mOnItemChildClickListener =

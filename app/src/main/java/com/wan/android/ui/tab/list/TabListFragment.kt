@@ -1,6 +1,5 @@
 package com.wan.android.ui.tab.list
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.viewModels
@@ -15,11 +14,12 @@ import com.wan.android.bean.ArticleEntity
 import com.wan.android.constant.Const
 import com.wan.android.databinding.FragmentArticleListBinding
 import com.wan.android.ui.ArticleViewModel
-import com.wan.android.ui.browser.BrowserNormalActivity
 import com.wan.android.ui.collect.CollectViewModel
 import com.wan.baselib.ext.collectOnLifecycle
 import com.wan.baselib.ext.showToast
 import com.wan.baselib.mvvm.BaseVMFragment
+import com.wan.baselib.router.Router
+import com.wan.baselib.router.RouterPath
 import com.wan.common.base.BaseUiState
 import com.wan.common.base.ListUiState
 import dagger.hilt.android.AndroidEntryPoint
@@ -84,11 +84,10 @@ class TabListFragment :
     private val mOnItemClickListener =
         BaseQuickAdapter.OnItemClickListener<ArticleEntity.DatasBean> { adapter, _, position ->
             val datasBean = adapter.getItem(position)
-            val intent = Intent(requireContext(), BrowserNormalActivity::class.java).apply {
-                putExtra(com.wan.common.constant.Const.WEB_TITLE, datasBean.title)
-                putExtra(com.wan.common.constant.Const.WEB_URL, datasBean.link)
-            }
-            startActivity(intent)
+            val routerRequest = Router.build(RouterPath.PATH_BROWSER)
+                .withString(com.wan.common.constant.Const.WEB_TITLE, datasBean.title)
+                .withString(com.wan.common.constant.Const.WEB_URL, datasBean.link)
+            Router.navigation(requireContext(), routerRequest)
         }
 
     private val mOnItemChildClickListener =

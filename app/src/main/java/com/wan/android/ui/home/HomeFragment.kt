@@ -1,6 +1,5 @@
 package com.wan.android.ui.home
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.viewModels
@@ -15,11 +14,12 @@ import com.wan.android.adapter.ImageNetAdapter
 import com.wan.android.bean.ArticleEntity
 import com.wan.android.databinding.FragmentHomeBinding
 import com.wan.android.ui.ArticleViewModel
-import com.wan.android.ui.browser.BrowserNormalActivity
 import com.wan.android.ui.collect.CollectViewModel
 import com.wan.baselib.ext.collectOnLifecycle
 import com.wan.baselib.ext.showToast
 import com.wan.baselib.mvvm.BaseVMFragment
+import com.wan.baselib.router.Router
+import com.wan.baselib.router.RouterPath
 import com.wan.common.base.BaseUiState
 import com.wan.common.base.ListUiState
 import com.wan.common.constant.Const
@@ -83,11 +83,10 @@ class HomeFragment : BaseVMFragment<ArticleViewModel, FragmentHomeBinding>() {
     private val mOnItemClickListener =
         BaseQuickAdapter.OnItemClickListener<ArticleEntity.DatasBean> { adapter, _, position ->
             val datasBean = adapter.getItem(position)
-            val intent = Intent(requireContext(), BrowserNormalActivity::class.java).apply {
-                putExtra(Const.WEB_TITLE, datasBean.title)
-                putExtra(Const.WEB_URL, datasBean.link)
-            }
-            startActivity(intent)
+            val routerRequest = Router.build(RouterPath.PATH_BROWSER)
+                .withString(Const.WEB_TITLE, datasBean.title)
+                .withString(Const.WEB_URL, datasBean.link)
+            Router.navigation(requireContext(), routerRequest)
         }
 
     private val mOnItemChildClickListener =
@@ -144,6 +143,7 @@ class HomeFragment : BaseVMFragment<ArticleViewModel, FragmentHomeBinding>() {
                     // 重置“加载更多”时状态
                     helper.trailingLoadState = LoadState.None
                 }
+
                 is ListUiState.Success -> {
                     binding.swipeRefresh.isRefreshing = false
                     uiState.data.datas?.let { articleAdapter.addAll(it) }

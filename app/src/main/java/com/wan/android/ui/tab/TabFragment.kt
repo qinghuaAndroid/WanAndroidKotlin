@@ -46,8 +46,8 @@ class TabFragment : BaseVMFragment<TabViewModel, FragmentTabBinding>() {
     }
 
     override fun subscribeEvent() {
-        SharedFlowBus.on<Int>(com.wan.common.constant.Const.THEME_COLOR)
-            .observe(this) { setThemeColor() }
+        SharedFlowBus.with<Int>(com.wan.common.constant.Const.THEME_COLOR)
+            .collectOnLifecycle(this) { setThemeColor() }
     }
 
     private fun setThemeColor() {

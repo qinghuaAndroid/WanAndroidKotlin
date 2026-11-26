@@ -15,6 +15,8 @@ import com.wan.baselib.ext.collectOnLifecycle
 import com.wan.baselib.ext.listener.queryTextListener
 import com.wan.baselib.ext.showToast
 import com.wan.baselib.mvvm.BaseVMActivity
+import com.wan.baselib.router.Router
+import com.wan.baselib.router.RouterPath
 import com.wan.common.base.onFailure
 import com.wan.common.base.onSuccess
 import dagger.hilt.android.AndroidEntryPoint
@@ -46,9 +48,9 @@ class SearchActivity : BaseVMActivity<SearchViewModel, ActivitySearchBinding>() 
 
     private fun goToSearchList(key: String) {
         searchViewModel.saveSearchKey(key)
-        val intent = Intent(this, SearchListActivity::class.java)
-        intent.putExtra(Const.SEARCH_KEY, key)
-        startActivity(intent)
+        Router.build(RouterPath.PATH_SEARCH_LIST)
+            .withString(Const.SEARCH_KEY, key)
+            .let { Router.navigation(this, it) }
     }
 
     override fun loadData() {

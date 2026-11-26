@@ -12,6 +12,8 @@ import com.wan.android.databinding.ActivitySplashBinding
 import com.wan.android.ui.main.MainActivity
 import com.wan.baselib.base.BaseActivity
 import com.wan.baselib.ext.showLongToast
+import com.wan.baselib.router.Router
+import com.wan.baselib.router.RouterPath
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
@@ -62,7 +64,8 @@ class SplashActivity : BaseActivity<ActivitySplashBinding>() {
     private fun enterMain() {
         lifecycleScope.launch {
             delay(2000.milliseconds)//delay函数是挂起，非阻塞的
-            startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+            val routerRequest = Router.build(RouterPath.PATH_MAIN)
+            Router.navigation(this@SplashActivity, routerRequest)
             finish()
         }
     }

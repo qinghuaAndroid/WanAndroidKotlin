@@ -3,6 +3,7 @@ package com.wan.android.ui.collect
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.viewModels
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.chad.library.adapter4.BaseQuickAdapter
 import com.chad.library.adapter4.QuickAdapterHelper
@@ -17,7 +18,8 @@ import com.wan.android.ui.browser.BrowserNormalActivity
 import com.wan.baselib.ext.collectOnLifecycle
 import com.wan.baselib.ext.showToast
 import com.wan.baselib.mvvm.BaseVMActivity
-import com.wan.common.base.ListUiState
+import com.wan.baselib.router.Router
+import com.wan.baselib.router.RouterPath
 import com.wan.common.base.onFailure
 import com.wan.common.base.onLoading
 import com.wan.common.base.onSuccess
@@ -77,11 +79,10 @@ class CollectActivity : BaseVMActivity<ArticleViewModel, ActivityCollectBinding>
     private val mOnItemClickListener =
         BaseQuickAdapter.OnItemClickListener<ArticleEntity.DatasBean> { adapter, _, position ->
             val datasBean = adapter.getItem(position)
-            val intent = Intent(this, BrowserNormalActivity::class.java).apply {
-                putExtra(Const.WEB_TITLE, datasBean.title)
-                putExtra(Const.WEB_URL, datasBean.link)
-            }
-            startActivity(intent)
+            val routerRequest = Router.build(RouterPath.PATH_BROWSER)
+                .withString(Const.WEB_TITLE, datasBean.title)
+                .withString(Const.WEB_URL, datasBean.link)
+            Router.navigation(this, routerRequest)
         }
 
     private val mOnItemChildClickListener =
@@ -105,23 +106,22 @@ class CollectActivity : BaseVMActivity<ArticleViewModel, ActivityCollectBinding>
 
     override fun subscribeUi() {
         articleViewModel.uiState.collectOnLifecycle(this) { uiState ->
-            when (uiState) {
-                is ListUiState.Loading -> {
-                    binding.swipeRefresh.isRefreshing = true
-                    // 重置“加载更多”时状态
-                    helper.trailingLoadState = LoadState.None
+            uiState.onLoading {
+                binding.swipeRefresh.isRefreshing = true
+                // 重置“加载更多”时状态
+                helper.trailingLoadState = LoadState.None
+            }.onSuccess { isRefresh, data, hasMore ->
+                binding.swipeRefresh.isRefreshing = false
+                if (isRefresh) {
+                    collectAdapter.submitList(data.datas)
+                } else {
+                    data.datas?.let { collectAdapter.addAll(it) }
                 }
-                is ListUiState.Success -> {
-                    binding.swipeRefresh.isRefreshing = false
-                    uiState.data.datas?.let { collectAdapter.addAll(it) }
-                    helper.trailingLoadState = LoadState.NotLoading(!uiState.hasMore)
-                }
-
-                is ListUiState.Failure -> {
-                    binding.swipeRefresh.isRefreshing = false
-                    uiState.exception.message?.let { showToast(it) }
-                    helper.trailingLoadState = LoadState.Error(uiState.exception)
-                }
+                helper.trailingLoadState = LoadState.NotLoading(!hasMore)
+            }.onFailure {
+                binding.swipeRefresh.isRefreshing = false
+                showToast(it.message)
+                helper.trailingLoadState = LoadState.Error(it)
             }
         }
         collectViewModel.uiState.collectOnLifecycle(this) { uiState ->

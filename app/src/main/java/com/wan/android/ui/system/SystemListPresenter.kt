@@ -1,10 +1,10 @@
 package com.wan.android.ui.system
 
-import android.content.Intent
 import android.view.View
 import com.wan.android.bean.SystemListEntity
 import com.wan.android.constant.Const
-import com.wan.android.ui.system.act.SystemActivity
+import com.wan.baselib.router.Router
+import com.wan.baselib.router.RouterPath
 
 /**
  * @author cy
@@ -17,9 +17,11 @@ class SystemListPresenter {
 
     private fun clickLabel(view: View, childrenBean: SystemListEntity.ChildrenBean) {
         val context = view.context ?: return
-        val intent = Intent(context, SystemActivity::class.java)
-        intent.putExtra(Const.SYSTEM_ID, childrenBean.id)
-        intent.putExtra(Const.SYSTEM_TITLE, childrenBean.name)
-        context.startActivity(intent)
+        Router.navigation(
+            context,
+            Router.build(RouterPath.PATH_SYSTEM)
+                .withInt(Const.SYSTEM_ID, childrenBean.id)
+                .withString(Const.SYSTEM_TITLE, childrenBean.name)
+        )
     }
 }

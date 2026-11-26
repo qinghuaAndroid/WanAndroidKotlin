@@ -1,9 +1,9 @@
 package com.wan.android.ui.navigation
 
-import android.content.Intent
 import android.view.View
 import com.wan.android.bean.ArticleEntity
-import com.wan.android.ui.browser.BrowserNormalActivity
+import com.wan.baselib.router.Router
+import com.wan.baselib.router.RouterPath
 import com.wan.common.constant.Const
 
 /**
@@ -18,10 +18,9 @@ class NavigationPresenter {
 
     private fun clickLabel(view: View, datasBean: ArticleEntity.DatasBean) {
         val context = view.context ?: return
-        val intent = Intent(context, BrowserNormalActivity::class.java).apply {
-            putExtra(Const.WEB_TITLE, datasBean.title)
-            putExtra(Const.WEB_URL, datasBean.link)
-        }
-        context.startActivity(intent)
+        val routerRequest = Router.build(RouterPath.PATH_BROWSER)
+            .withString(Const.WEB_TITLE, datasBean.title)
+            .withString(Const.WEB_URL, datasBean.link)
+        Router.navigation(context, routerRequest)
     }
 }
